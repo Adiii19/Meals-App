@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meals/models/meal.dart';
+import 'package:meals/providers/favorites_provider.dart';
+import 'package:meals/providers/filters_provider.dart';
 
-class MealDetails extends StatelessWidget{
-  MealDetails({super.key,required this.meal,required this.ontogglefavoritemeals});
+class MealDetails extends ConsumerWidget{
+  MealDetails({super.key,required this.meal,});
 
 
 final Meal meal;
-final void Function(Meal meal)ontogglefavoritemeals;
 
 
   
    @override
-  Widget build(BuildContext context) {
-   
+  Widget build(BuildContext context,WidgetRef ref) {
+
+   final favoritemeals=ref.watch(favoriteMEalsProvider);
+   final isFavorite=favoritemeals.contains(meal);
+
    return
         
      Scaffold(
@@ -21,14 +26,27 @@ final void Function(Meal meal)ontogglefavoritemeals;
         ),
         actions: [
           IconButton(onPressed: (){
-            ontogglefavoritemeals(meal);
-          }, icon:Icon(Icons.star))
-        ],
+              final wasAdded=ref.read(favoriteMEalsProvider.notifier).togglefavoritestatus(meal);
+
+              ScaffoldMessenger.of(context).clearSnackBars();
+ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(wasAdded?'Meal added as favorite!':'Meal removed!')));
+
+          },
+           icon:AnimatedSwitcher(duration: Duration(milliseconds: 300),
+           child:Icon(isFavorite?Icons.star:Icons.star_border,key: ValueKey(isFavorite),),
+           transitionBuilder: (child, animation) {
+            return
+                   RotationTransition(turns:Tween(begin: 0.8,end: 1.0).animate(animation),child: child,);
+             
+           }, ),
+          )
+        
+        ]
         ),
         body: SingleChildScrollView(
           child: Column(
             children: [
-              Image.network(meal.imageUrl),
+              Hero(child: Image.network(meal.imageUrl),tag: meal.id,),
               SizedBox(height: 5,),
               
             Text("Ingredients",style: Theme.of(context).textTheme.titleLarge!.copyWith(
